@@ -1,0 +1,4 @@
+
+typedef struct _PTEPDE {
+	u32 v[1024];
+} PAGE_TABLE, PAGE_DIR, *PPAGE_TABLE, *PPAGE_DIR;
