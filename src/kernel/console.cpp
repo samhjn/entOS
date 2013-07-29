@@ -1,5 +1,7 @@
 #include "os.h"
 #define VIDEO_RAM_BASE (0xb8000)
+#define CURSOR_6845_1 (0x3d4)
+#define CURSOR_6845_2 (0x3d5)
 #define GET_ADDR(x,y)	((u8*)VIDEO_RAM_BASE + ((x) + (y) * 80) * 2)
  
 typedef struct {
@@ -19,6 +21,19 @@ void conInitStage0() {
 	gcon.h = 25;
 	conStage = 0;
 	conClearScreen();
+}
+
+int conMoveCursor(int x,int y)
+{
+	int cur;
+
+	if ((x<0)||(y<0)||(x>=gcon.w)||(y>=gcon.h)) return RESULT_ERROR_PARAM;
+	cur=(y)*(gcon.w)+x;
+	outportb(CURSOR_6845_1,14);
+	outportb(CURSOR_6845_2,(cur>>8)&0xff);
+	outportb(CURSOR_6845_1,15);
+	outportb(CURSOR_6845_2,cur&0xff);
+	return RESULT_SUCCESS;	
 }
 
 int conGetCursor(int *x, int *y) {
@@ -45,6 +60,7 @@ void conScrollNext() {
 		*GET_ADDR(j, i) = 0x20;		
 		*(GET_ADDR(j, i) + 1) = conDefaultColor;	
 	}
+	conMoveCursor(0,gcon.h-1);
 			
 }
 void conNewLine() {
@@ -64,6 +80,7 @@ void conClearScreen() {
 			*(GET_ADDR(j, i) + 1) = conDefaultColor;	
 		}
 	}
+	conMoveCursor(0,0);
 }
 
 void conFillColor(u8 color) {
@@ -89,6 +106,7 @@ void conPutChar(char ch) {
 	*GET_ADDR(gcon.cx, gcon.cy) = ch;
 	*(GET_ADDR(gcon.cx, gcon.cy) + 1) = conDefaultColor;
 	gcon.cx++;
+	conMoveCursor(gcon.cx,gcon.cy);
 	if (gcon.cx >= gcon.w) conNewLine();
 }
 
@@ -97,5 +115,3 @@ void conPuts(char* str) {
 		conPutChar(*(str++));
 	}
 }
-
-
